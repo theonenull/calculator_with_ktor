@@ -23,9 +23,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @Composable
-fun Calculator() {
-    Box(modifier = Modifier.fillMaxSize()){
-        val viewModel  = ViewModelState()
+fun Calculator(
+    viewModel: ViewModelState,
+    modifier: Modifier
+) {
+    Box(modifier = modifier){
         Column (
             modifier = Modifier
                 .fillMaxSize()
@@ -87,7 +89,7 @@ fun InputArea(
 ){
     val value = stringForCalculator.collectAsState()
     LaunchedEffect(value.value){
-        delay(3000)
+        delay(500)
         compute.invoke()
     }
     TextField(
@@ -96,6 +98,7 @@ fun InputArea(
             addString.invoke(it)
         },
         modifier = modifier,
+        readOnly = true
     )
 
 }
@@ -155,7 +158,11 @@ fun ResultArea(
     state : MutableStateFlow<Result>
 ){
     val result by state.collectAsState()
-    Row(modifier){
+    Row(
+        modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ){
         Box(
             modifier = Modifier
                 .fillMaxHeight()
@@ -189,6 +196,60 @@ fun ResultArea(
                             painter = painterResource("circle.svg"),
                             contentDescription = null,
                             tint = Color.Gray
+                        )
+                    }
+                    is Result.WithX ->{
+                        Icon(
+                            painter = painterResource("xml.svg"),
+                            contentDescription = null,
+                            tint = Color.Gray
+                        )
+                    }
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .weight(1f)
+        ){
+            Crossfade(
+                result,
+                modifier = Modifier
+                    .wrapContentHeight()
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
+            ){
+                when(it){
+                    is Result.Success ->{
+                        Text(
+                            it.data,
+                            modifier = Modifier
+                        )
+                    }
+                    is Result.Error ->{
+                        Text(
+                            it.error.message.toString(),
+                            modifier = Modifier
+                        )
+                    }
+                    is Result.Loading ->{
+                        Text(
+                            "加载中",
+                            modifier = Modifier
+                        )
+                    }
+                    is Result.Null -> {
+                        Text(
+                            "无输入",
+                            modifier = Modifier
+                        )
+                    }
+
+                    is Result.WithX ->{
+                        Text(
+                            "已进入替换模式",
+                            modifier = Modifier
                         )
                     }
                 }

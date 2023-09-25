@@ -9,4 +9,6 @@ interface Result {
     ):Result
     class Loading():Result
     class Null():Result
+
+    class WithX():Result
 }

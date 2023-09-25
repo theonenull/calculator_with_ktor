@@ -1,3 +1,3 @@
 package data
 
-val charList = listOf('+','-','×','÷','.','(',')',"👀",'=','←')
+val charList = listOf('+','-','*','/','.','(',')','x','=','←')
