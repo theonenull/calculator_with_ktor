@@ -1,7 +1,5 @@
 package logic
 
-import javax.script.ScriptEngineManager
-
 /*
 fun compute(string: String) {
      if(string)

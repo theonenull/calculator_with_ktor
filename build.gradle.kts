@@ -16,7 +16,7 @@ repositories {
 
 kotlin {
     jvm {
-        jvmToolchain(11)
+        jvmToolchain(17)
         withJava()
     }
     sourceSets {
@@ -35,7 +35,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "calculator"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
+            windows {
+                iconFile.set(project.file("icon.ico"))
+            }
         }
     }
 }
+

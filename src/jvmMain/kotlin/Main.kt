@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -43,11 +44,12 @@ fun main() = application {
     val state = rememberWindowState(
         size = DpSize(700.dp,700.dp),
     )
-
+    val icon = painterResource("calculator.svg")
     Window(
         onCloseRequest = ::exitApplication,
         resizable = false,
-        state = state
+        state = state,
+        icon = icon
     ) {
         LaunchedEffect(isExpand.value){
             if(isExpand.value){

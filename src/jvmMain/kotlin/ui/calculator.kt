@@ -1,6 +1,8 @@
 package ui
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.ScrollbarAdapter
+import androidx.compose.foundation.VerticalScrollbar
 import data.ViewModelState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -73,6 +75,9 @@ fun Calculator(
                 },
                 subString = {
                     viewModel.subString()
+                },
+                compute = {
+                    viewModel.compute()
                 }
             )
 
@@ -100,14 +105,14 @@ fun InputArea(
         modifier = modifier,
         readOnly = true
     )
-
 }
 
 @Composable
 fun ButtonArea(
     modifier: Modifier,
     addString: (String) -> Unit,
-    subString: () -> Unit
+    subString: () -> Unit,
+    compute : ()->Unit
 ){
     LazyVerticalGrid(
         modifier = modifier,
@@ -133,6 +138,9 @@ fun ButtonArea(
                         '←'->{
                             subString.invoke()
                         }
+                        '='->{
+                            compute.invoke()
+                        }
                         else->{
                             addString.invoke(charList[it].toString())
                         }
@@ -141,8 +149,14 @@ fun ButtonArea(
                 modifier = Modifier.fillMaxWidth()
                     .aspectRatio(0.7f)
                     .padding(3.dp),
-                colors = if( charList[it] == '←' ) ButtonDefaults.buttonColors( backgroundColor = Color.Red) else ButtonDefaults.buttonColors(),
-            ){
+                colors =
+                    when(charList[it]){
+                        '←'-> ButtonDefaults.buttonColors( backgroundColor = Color.Red)
+                        '='-> ButtonDefaults.buttonColors( backgroundColor = Color.Gray)
+                        'x'-> ButtonDefaults.buttonColors( backgroundColor = Color(215, 215, 237))
+                        else-> ButtonDefaults.buttonColors()
+                    }
+                ){
                 Text(
                     charList[it].toString()
                 )
@@ -208,10 +222,12 @@ fun ResultArea(
                 }
             }
         }
+        val scrollState = rememberScrollState()
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .weight(1f)
+                .verticalScroll(scrollState)
         ){
             Crossfade(
                 result,
@@ -255,6 +271,13 @@ fun ResultArea(
                 }
             }
         }
+        VerticalScrollbar(
+            adapter = ScrollbarAdapter(scrollState),
+            modifier = Modifier
+                .fillMaxHeight(1f)
+                .width(8.dp)
+                .padding(horizontal = 2.dp)
+        )
     }
 }
 
