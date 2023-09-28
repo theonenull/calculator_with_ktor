@@ -54,27 +54,31 @@ class ViewModelState {
     val dataForDraw = MutableStateFlow<MutableList<ChartItem>>(mutableStateListOf())
     val dialogState = MutableStateFlow<String?>(null)
     fun subString(){
-        stringForCalculator.let { stringMutableStateFlow ->
-            if (stringMutableStateFlow.value.isNotEmpty()) {
-                stringMutableStateFlow.update {
-                    val data = it
-                    if(data.substring(0, data.length - 1).isEmpty()){
-                        result.value = Result.Null()
+        scope.launch {
+            stringForCalculator.let { stringMutableStateFlow ->
+                if (stringMutableStateFlow.value.isNotEmpty()) {
+                    stringMutableStateFlow.update {
+                        val data = it
+                        if(data.substring(0, data.length - 1).isEmpty()){
+                            result.value = Result.Null()
+                        }
+                        it.substring(0, it.length - 1)
                     }
-                    it.substring(0, it.length - 1)
                 }
             }
         }
     }
 
     fun addSting(new:String){
-        stringForCalculator.let { stringMutableStateFlow ->
-            if((stringMutableStateFlow.value+new).length<50){
-                stringMutableStateFlow.update {
-                    it + new
-                }
-                if(result.value !is Result.Loading){
-                    result.value = Result.Loading()
+        scope.launch {
+            stringForCalculator.let { stringMutableStateFlow ->
+                if((stringMutableStateFlow.value+new).length<50){
+                    stringMutableStateFlow.update {
+                        it + new
+                    }
+                    if(result.value !is Result.Loading){
+                        result.value = Result.Loading()
+                    }
                 }
             }
         }
@@ -93,6 +97,7 @@ class ViewModelState {
             val data = evaluateExpression(sanitizedExpression)
             result.value = Result.Success(data.toString())
         } catch (e: Exception) {
+            println(e)
             result.value = Result.Error(Throwable(e))
         }
     }
@@ -112,40 +117,42 @@ class ViewModelState {
     }
 
     fun updateDataForCharMain(){
-        if(charResult.value!="格式正确"){
-            dialogState.value = "范围有误"
-            return
-        }
-        val range = (chartStart.value.toInt()..chartEnd.value.toInt())
-        val list = mutableListOf<Double>()
-        for( item in range){
-            try {
-                val sanitizedExpression =
-                    if(item<0){
-                        stringForCalculator.value.replace("x","(0${item.toString()})")
-                    }else{
-                        stringForCalculator.value.replace("x", item.toString())
-                    }
-                val data = evaluateExpression(sanitizedExpression)
-                list.add(data)
+        scope.launch {
+            if(charResult.value!="格式正确"){
+                dialogState.value = "范围有误"
+                return@launch
             }
-            catch (e:Exception){
-                dialogState.value = "表达式有误"
-                return
+            val range = (chartStart.value.toInt()..chartEnd.value.toInt())
+            val list = mutableListOf<Double>()
+            for( item in range){
+                try {
+                    val sanitizedExpression =
+                        if(item<0){
+                            stringForCalculator.value.replace("x","(0${item.toString()})")
+                        }else{
+                            stringForCalculator.value.replace("x", item.toString())
+                        }
+                    val data = evaluateExpression(sanitizedExpression)
+                    list.add(data)
+                }
+                catch (e:Exception){
+                    dialogState.value = "表达式有误"
+                    return@launch
+                }
             }
+            val ymax = list.max()
+            val ymin = list.min()
+            val xmax = range.toList().max().toDouble()
+            val xmin = range.toList().min().toDouble()
+            dataForDraw.value = list.mapIndexed { index, d ->
+                ChartItem(
+                    x = range.elementAt(index),
+                    y = d,
+                    xPercent = (range.elementAt(index).toDouble()-xmin)/(xmax - xmin),
+                    yPercent = (d.toDouble()-ymin)/(ymax - ymin)
+                )
+            }.toMutableStateList()
         }
-        val ymax = list.max()
-        val ymin = list.min()
-        val xmax = range.toList().max().toDouble()
-        val xmin = range.toList().min().toDouble()
-        dataForDraw.value = list.mapIndexed { index, d ->
-            ChartItem(
-                x = range.elementAt(index),
-                y = d,
-                xPercent = (range.elementAt(index).toDouble()-xmin)/(xmax - xmin),
-                yPercent = (d.toDouble()-ymin)/(ymax - ymin)
-            )
-        }.toMutableStateList()
     }
 
 }
