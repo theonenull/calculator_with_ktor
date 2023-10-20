@@ -2,7 +2,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     kotlin("multiplatform")
-    id("org.jetbrains.compose")
+    id("org.jetbrains.compose") version "1.5.0"
 }
 
 group = "com.example"
@@ -13,7 +13,7 @@ repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
-
+val ktor_version = "2.3.5"
 kotlin {
     jvm {
         jvmToolchain(17)
@@ -23,6 +23,17 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("androidx.compose.material3:material3:1.1.1")
+                // Compose
+//                    implementation("org.jetbrains.compose.ui:ui-test-junit4")
+                implementation("org.junit.jupiter:junit-jupiter:5.7.0")
+                implementation("org.junit.vintage:junit-vintage-engine:5.7.0")
+
+                implementation("io.ktor:ktor-client-content-negotiation:2.3.5")
+                implementation("io.ktor:ktor-serialization-jackson:2.3.5")
+                implementation("io.ktor:ktor-client-okhttp:$ktor_version")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
             }
         }
         val jvmTest by getting{
@@ -39,10 +50,7 @@ kotlin {
                     implementation("io.kotest:kotest-property:5.3.1")
                     // ktor
 
-                    // Compose
-//                    implementation("org.jetbrains.compose.ui:ui-test-junit4")
-                    implementation("org.junit.jupiter:junit-jupiter:5.7.0")
-                    implementation("org.junit.vintage:junit-vintage-engine:5.7.0")
+
                 }
             }
         }

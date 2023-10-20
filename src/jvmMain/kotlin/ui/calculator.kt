@@ -1,14 +1,11 @@
 package ui
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.ScrollbarAdapter
-import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.*
 import data.ViewModelState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +24,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun Calculator(
     viewModel: ViewModelState,
-    modifier: Modifier
+    modifier: Modifier,
+    dialog: (String?) -> Unit,
+    expand: () -> Unit
 ) {
     Box(modifier = modifier){
         Column (
@@ -57,8 +56,9 @@ fun Calculator(
                         }
                     },
                     compute = {
-                        viewModel.compute()
-                    }
+                        viewModel.compute(dialog)
+                    },
+                    viewModel = viewModel
                 )
             }
             ResultArea(
@@ -77,8 +77,16 @@ fun Calculator(
                     viewModel.subString()
                 },
                 compute = {
-                    viewModel.compute()
-                }
+                    viewModel.saveResult(
+                        dialog
+                    )
+                },
+                clear = {
+                    viewModel.stringForCalculator.value = ""
+                    println("ssss")
+                },
+                expand = expand,
+                viewModel = viewModel
             )
 
         }
@@ -88,9 +96,10 @@ fun Calculator(
 @Composable
 fun InputArea(
     modifier: Modifier,
-    stringForCalculator : MutableStateFlow<String>,
-    addString: (String)->Unit,
-    compute : ()->Unit
+    stringForCalculator: MutableStateFlow<String>,
+    addString: (String) -> Unit,
+    compute: () -> Unit,
+    viewModel: ViewModelState
 ){
     val value = stringForCalculator.collectAsState()
     LaunchedEffect(value.value){
@@ -107,13 +116,18 @@ fun InputArea(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ButtonArea(
     modifier: Modifier,
     addString: (String) -> Unit,
     subString: () -> Unit,
-    compute : ()->Unit
+    compute: () -> Unit,
+    expand: () -> Unit,
+    viewModel: ViewModelState,
+    clear: () -> Unit
 ){
+    val isExpand = viewModel.withX.collectAsState()
     LazyVerticalGrid(
         modifier = modifier,
         columns = GridCells.Fixed(5)
@@ -138,8 +152,14 @@ fun ButtonArea(
                         '←'->{
                             subString.invoke()
                         }
-                        '='->{
+                        "💾" ->{
                             compute.invoke()
+                        }
+                        "\uD83D\uDCD6" ->{
+                            expand.invoke()
+                        }
+                        "\uD83D\uDCD9" ->{
+                            expand.invoke()
                         }
                         else->{
                             addString.invoke(charList[it].toString())
@@ -148,7 +168,20 @@ fun ButtonArea(
                 },
                 modifier = Modifier.fillMaxWidth()
                     .aspectRatio(0.7f)
-                    .padding(3.dp),
+                    .padding(3.dp)
+                    .apply {
+                        if(charList[it] == '←'){
+                            this.combinedClickable(
+                                onLongClick = {
+                                    clear.invoke()
+                                },
+                                onClickLabel = "",
+                                onClick = {
+                                    subString.invoke()
+                                }
+                            )
+                        }
+                    },
                 colors =
                     when(charList[it]){
                         '←'-> ButtonDefaults.buttonColors( backgroundColor = Color.Red)
@@ -157,9 +190,24 @@ fun ButtonArea(
                         else-> ButtonDefaults.buttonColors()
                     }
                 ){
-                Text(
-                    charList[it].toString()
-                )
+
+                if(charList[it]=="📖"){
+                    if(isExpand.value){
+                        Text(
+                            "\uD83D\uDCD6"
+                        )
+                    }
+                    else{
+                        Text(
+                            "\uD83D\uDCD9"
+                        )
+                    }
+                }
+                else{
+                    Text(
+                        charList[it].toString()
+                    )
+                }
             }
         }
     }
@@ -264,7 +312,7 @@ fun ResultArea(
 
                     is Result.WithX ->{
                         Text(
-                            "已进入替换模式",
+                            "已进入功能模式",
                             modifier = Modifier
                         )
                     }

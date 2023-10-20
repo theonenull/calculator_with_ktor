@@ -3,6 +3,13 @@ package data
 import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.toMutableStateList
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
+import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -12,20 +19,17 @@ import logic.evaluateExpression
 import javax.script.ScriptEngineManager
 
 class ViewModelState {
+    val client = HttpClient(OkHttp) {
+        install(ContentNegotiation) {
+            jackson()
+        }
+    }
     private val scope = CoroutineScope(Job())
     private val scope2 = CoroutineScope(Job())
     val stringForCalculator = MutableStateFlow("")
     val scrollableState = ScrollState(initial = 0)
     val result = MutableStateFlow<Result>(Result.Null())
-    val withX = stringForCalculator
-        .map {
-            it.indexOf("x") != -1
-        }
-        .stateIn(
-            scope2,
-            SharingStarted.Eagerly,
-            false
-        )
+    val withX = MutableStateFlow(false)
     val chartStart = MutableStateFlow("")
     val chartEnd = MutableStateFlow("")
     val charResult = chartEnd
@@ -83,7 +87,9 @@ class ViewModelState {
             }
         }
     }
-    fun compute(){
+    fun compute(
+        dialog: (String?) -> Unit
+    ){
         if(stringForCalculator.value.isEmpty() ){
             result.value = Result.Null()
             return
@@ -93,7 +99,7 @@ class ViewModelState {
             return
         }
         val sanitizedExpression = stringForCalculator.value.replace(" ", "") // 删除空格
-        val theResult = try {
+        try {
             val data = evaluateExpression(sanitizedExpression)
             result.value = Result.Success(data.toString())
         } catch (e: Exception) {
@@ -152,6 +158,28 @@ class ViewModelState {
                     yPercent = (d.toDouble()-ymin)/(ymax - ymin)
                 )
             }.toMutableStateList()
+        }
+    }
+
+    fun saveResult(
+        dialog: (String?) -> Unit
+    ){
+        scope.launch(Dispatchers.Default) {
+            if(result.value !is Result.Success){
+                dialog.invoke("正确的结果才可保存")
+
+                return@launch
+            }
+            val data:String = client.submitForm(
+                "http://127.0.0.1:8082/calculate",
+//                    contentType(ContentType.Application.Json),
+//                    setBody(HelloWorld("123","455"))
+                formParameters = parameters {
+                    append("result",(result.value as Result.Success).data)
+                    append("calculationFormula",stringForCalculator.value)
+                }
+            ).body()
+            dialog.invoke("保存成功")
         }
     }
 
